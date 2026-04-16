@@ -10,7 +10,7 @@ app.use(
   cors({
     origin: ["http://localhost:3000"],
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -35,13 +35,47 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
     const allSurahCollection = client.db("surah").collection("surahList");
 
-     app.get("/surah-list", async (req, res) => {
+    app.get("/surah-list", async (req, res) => {
       const result = await allSurahCollection.find().toArray();
       res.send(result);
     });
 
+    app.get("/surah-list/:id", async (req, res) => {
+      try {
+        const surahId = parseInt(req.params.id);
+
+        const data = await allSurahCollection.findOne();
+
+        if (!data) {
+          return res.status(404).send({ message: "No data found" });
+        }
+
+        const surah = data.chapters[surahId.toString()];
+
+        if (!surah) {
+          return res
+            .status(404)
+            .send({ message: `Surah with id ${surahId} not found` });
+        }
+
+        const response = {
+          ...surah,
+          global_stats: {
+            total_surahs: data.total_surahs,
+            total_verses: data.total_verses,
+            total_meccan_surahs: data.total_meccan_surahs,
+            total_medinan_surahs: data.total_medinan_surahs,
+          },
+        };
+
+        res.send(response);
+      } catch (error) {
+        res.status(500).send({ message: error.message });
+      }
+    });
+
     console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
+      "Pinged your deployment. You successfully connected to MongoDB!",
     );
   } finally {
     // Ensures that the client will close when you finish/error
