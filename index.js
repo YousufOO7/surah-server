@@ -74,6 +74,73 @@ async function run() {
       }
     });
 
+  app.get("/search-verses", async (req, res) => {
+  try {
+    const query = req.query.query;
+
+
+    if (!query) {
+      return res.status(400).send({ message: "Query is required" });
+    }
+
+    const searchText = query.toLowerCase();
+
+    const data = await allSurahCollection.findOne();
+
+    if (!data) {
+      return res.status(404).send({ message: "No data found" });
+    }
+
+
+    const filteredChapters = {};
+
+    for (const surahKey in data.chapters) {
+      const surah = data.chapters[surahKey];
+
+
+      const matchedVerses = {};
+
+      for (const verseKey in surah.verses) {
+        const verse = surah.verses[verseKey];
+
+        const content = verse.content.toLowerCase();
+        const translation = verse.translation_eng.toLowerCase();
+
+        if (
+          content.includes(searchText) ||
+          translation.includes(searchText)
+        ) {
+
+          matchedVerses[verseKey] = verse;
+        }
+      }
+
+      if (Object.keys(matchedVerses).length > 0) {
+
+        filteredChapters[surahKey] = {
+          id: surah.id,
+          surah_name: surah.surah_name,
+          surah_name_ar: surah.surah_name_ar,
+          translation: surah.translation,
+          type: surah.type,
+          total_verses: surah.total_verses,
+          description: surah.description,
+          verses: matchedVerses,
+        };
+      }
+    }
+
+    res.send({
+      total_surah_found: Object.keys(filteredChapters).length,
+      chapters: filteredChapters,
+    });
+  } catch (error) {
+    console.log("ERROR:", error.message);
+    res.status(500).send({ message: error.message });
+  }
+});
+
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
