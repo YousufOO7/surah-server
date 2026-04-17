@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", 'https://surah-client.vercel.app'],
     credentials: true,
   }),
 );
@@ -40,7 +40,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/surah-list/:id", async (req, res) => {
+    app.get("/ayat/:id", async (req, res) => {
       try {
         const surahId = parseInt(req.params.id);
 
